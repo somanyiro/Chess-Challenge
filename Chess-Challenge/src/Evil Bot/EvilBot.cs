@@ -12,8 +12,7 @@ public class EvilBot : IChessBot
 
     public Move Think(Board board, Timer timer)
     {
-        (Move, float) bestMove = FindBestMove(board, board.IsWhiteToMove, 2, 3);
-        Console.WriteLine(bestMove.Item2);
+        (Move, float) bestMove = FindBestMove(board, board.IsWhiteToMove, 1, 3);
 
         return bestMove.Item1;
     }

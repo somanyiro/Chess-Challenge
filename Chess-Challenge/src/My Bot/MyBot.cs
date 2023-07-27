@@ -10,69 +10,53 @@ public class MyBot : IChessBot
 
     public Move Think(Board board, Timer timer)
     {
-        (Move, float) bestMove = FindBestMove(board, board.IsWhiteToMove, 2, 3);
-        Console.WriteLine(bestMove.Item2);
+        List<Move> allMoves = board.GetLegalMoves().ToList();
+        allMoves = allMoves.OrderBy(x => rng.Next()).ToList();//shuffle it to get a random best move at the end
 
-        return bestMove.Item1;
-    }
-    
-    (Move, float score) FindBestMove(Board board, bool forWhite, int depth, int maxDepth)
-    {
-        List<Move> moves = board.GetLegalMoves().ToList();
+        float bestScore = float.NegativeInfinity;
+        Move bestMove = allMoves[0];
 
-        moves = moves.OrderBy(x => rng.Next()).ToList();//shuffle it to get a random best move at the end
-        //moves = moves.OrderBy(x => MovePriority(board, x)).ToList();//order to have checks and captures first
-
-        Move bestMove = moves[0];
-        float bestScore = -100000;
-
-        foreach (var move in moves)
+        foreach (Move move in allMoves)
         {
-            if (MoveIsCheckmate(board, move))
-            {
-                bestMove = move;
-                bestScore = 100000;
-                break;
-            }
-
-            if (MoveIsStalemate(board, move))
-            {
-                continue;
-            }
-
-            //int addedDepth = MovePriority(board, move);
-            //depth += addedDepth;
-
             board.MakeMove(move);
-
-            if (depth > 0 && maxDepth > 0)
-            {
-                (Move, float) result = FindBestMove(board, !forWhite, depth-1, maxDepth-1);
-                if (-result.Item2 > bestScore)
-                {
-                    bestMove = move;
-                    bestScore = -result.Item2;
-                }
-            }
-            else
-            {
-                float score = Evaulate(board, forWhite);
-                if (score > bestScore)
-                {
-                    bestScore = score;
-                    bestMove = move;
-                }
-            }
-
+            float score = -MinMaxPositionScore(board, 1); //don't know yet why this has to be negated
             board.UndoMove(move);
-            //depth -= addedDepth;
+            if (score > bestScore)
+            {
+                bestScore = score;
+                bestMove = move;
+            }
         }
 
-        return (bestMove, bestScore);
+        return bestMove;
     }
-    
-    float Evaulate(Board board, bool isWhite)
+
+    float MinMaxPositionScore(Board board, int depth)
     {
+        if (depth == 0 || board.IsInsufficientMaterial() || board.IsInCheckmate() || board.GetLegalMoves().Length == 0)
+            return Evaulate(board);
+        
+        List<Move> allMoves = board.GetLegalMoves().ToList();
+        
+        float bestScore = float.NegativeInfinity;
+        foreach (Move move in allMoves)
+        {
+            board.MakeMove(move);
+            float score = MinMaxPositionScore(board, depth-1);
+            board.UndoMove(move);
+            bestScore = Math.Max(bestScore, score);
+        }
+
+        return bestScore;
+        //Evaulate() already checks who made the move and returns it's value accordingly so I don't actually have to do minmaxing
+    }
+
+    float Evaulate(Board board) //TODO: this now has to check for draws and checkmates
+    {
+        if (board.IsInCheckmate()) return float.PositiveInfinity;
+        if (board.IsInsufficientMaterial()) return 0;
+        if (board.GetLegalMoves().Length == 0) return 0;
+
         float whitePieceValue = 0;
         float blackPieceValue = 0;
 
@@ -122,7 +106,8 @@ public class MyBot : IChessBot
 
         blackPieceValue += KingValue(board , pieceList[11][0]);
 
-        return isWhite ? whitePieceValue - blackPieceValue : blackPieceValue - whitePieceValue;
+        return !board.IsWhiteToMove ? whitePieceValue - blackPieceValue : blackPieceValue - whitePieceValue;
+        //IsWhiteToMove is negatided so positive values are good for the player that just made a move
     }
 
     int MovePriority(Board board, Move move)
@@ -150,14 +135,6 @@ public class MyBot : IChessBot
         bool isMate = board.IsInCheckmate();
         board.UndoMove(move);
         return isMate;
-    }
-
-    bool MoveIsStalemate(Board board, Move move)
-    {
-        board.MakeMove(move);
-        bool isStalemate = board.IsDraw();
-        board.UndoMove(move);
-        return isStalemate;
     }
 
     bool MoveIsCheck(Board board, Move move)
