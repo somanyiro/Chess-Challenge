@@ -11,17 +11,19 @@ public class MyBot : IChessBot
 	public Move Think(Board board, Timer timer)
 	{
 		List<Move> allMoves = board.GetLegalMoves().ToList();
-		allMoves = allMoves.OrderBy(x => rng.Next()).ToList();//shuffle it to get a random best move at the end
 
-		float bestScore = float.MinValue;
+		allMoves = allMoves.OrderBy(x => rng.Next()).ToList();//shuffle it to get a random best move at the end
+		//this should also be ordered by estimated move score
+
+		float bestScore = board.IsWhiteToMove ? float.MinValue : float.MaxValue;
 		Move bestMove = allMoves[0];
 
 		foreach (Move move in allMoves)
 		{
 			board.MakeMove(move);
-			float score = -MinMaxPositionScore(board, 0); //don't know yet why this has to be negated
+			float score = MinMaxPositionScore(board, 2);
 			board.UndoMove(move);
-			if (score > bestScore)
+			if ((board.IsWhiteToMove && score > bestScore) || (!board.IsWhiteToMove && score < bestScore))
 			{
 				bestScore = score;
 				bestMove = move;
@@ -37,23 +39,24 @@ public class MyBot : IChessBot
 			return Evaulate(board);
 		
 		List<Move> allMoves = board.GetLegalMoves().ToList();
+		allMoves = allMoves.OrderBy(x => rng.Next()).ToList();
 		
-		float bestScore = float.MinValue;
+		float bestScore = board.IsWhiteToMove ? float.MinValue : float.MaxValue;
 		foreach (Move move in allMoves)
 		{
 			board.MakeMove(move);
 			float score = MinMaxPositionScore(board, depth-1);
 			board.UndoMove(move);
-			bestScore = Math.Max(bestScore, score);
+			if ((board.IsWhiteToMove && score > bestScore) || (!board.IsWhiteToMove && score < bestScore))
+				bestScore = score;
 		}
 
 		return bestScore;
-		//Evaulate() already checks who made the move and returns it's value accordingly so I don't actually have to do minmaxing
 	}
 
 	float Evaulate(Board board)
 	{
-		if (board.IsInCheckmate()) return float.MaxValue;
+		if (board.IsInCheckmate()) return board.IsWhiteToMove ? float.MinValue : float.MaxValue;
 		if (board.IsInsufficientMaterial()) return 0;
 		if (board.GetLegalMoves().Length == 0) return 0;
 
@@ -106,8 +109,7 @@ public class MyBot : IChessBot
 
 		blackPieceValue += KingValue(board, pieceList[11][0]);
 
-		return board.IsWhiteToMove ? blackPieceValue - whitePieceValue : whitePieceValue - blackPieceValue;
-		//IsWhiteToMove is negatided so positive values are good for the player that just made a move
+		return whitePieceValue - blackPieceValue;
 	}
 
 	int MovePriority(Board board, Move move)
