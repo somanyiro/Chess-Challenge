@@ -12,68 +12,56 @@ public class EvilBot : IChessBot
 
 	public Move Think(Board board, Timer timer)
 	{
-		(Move, float) bestMove = FindBestMove(board, board.IsWhiteToMove, 2, 3);
+		List<Move> allMoves = board.GetLegalMoves().ToList();
 
-		return bestMove.Item1;
-	}
-	
-	(Move, float score) FindBestMove(Board board, bool forWhite, int depth, int maxDepth)
-	{
-		List<Move> moves = board.GetLegalMoves().ToList();
+		allMoves = allMoves.OrderBy(x => rng.Next()).ToList();//shuffle it to get a random best move at the end
+		//this should also be ordered by estimated move score
 
-		moves = moves.OrderBy(x => rng.Next()).ToList();//shuffle it to get a random best move at the end
-		//moves = moves.OrderBy(x => MovePriority(board, x)).ToList();//order to have checks and captures first
+		float bestScore = board.IsWhiteToMove ? float.MinValue : float.MaxValue;
+		Move bestMove = allMoves[0];
 
-		Move bestMove = moves[0];
-		float bestScore = -100000;
-
-		foreach (var move in moves)
+		foreach (Move move in allMoves)
 		{
-			if (MoveIsCheckmate(board, move))
-			{
-				bestMove = move;
-				bestScore = 100000;
-				break;
-			}
-
-			if (MoveIsStalemate(board, move))
-			{
-				continue;
-			}
-
-			//int addedDepth = MovePriority(board, move);
-			//depth += addedDepth;
-
 			board.MakeMove(move);
-
-			if (depth > 0 && maxDepth > 0)
-			{
-				(Move, float) result = FindBestMove(board, !forWhite, depth-1, maxDepth-1);
-				if (-result.Item2 > bestScore)
-				{
-					bestMove = move;
-					bestScore = -result.Item2;
-				}
-			}
-			else
-			{
-				float score = Evaulate(board, forWhite);
-				if (score > bestScore)
-				{
-					bestScore = score;
-					bestMove = move;
-				}
-			}
-
+			float score = MinMaxPositionScore(board, 3);
 			board.UndoMove(move);
-			//depth -= addedDepth;
+			if ((board.IsWhiteToMove && score > bestScore) || (!board.IsWhiteToMove && score < bestScore))
+			{
+				bestScore = score;
+				bestMove = move;
+			}
 		}
 
-		return (bestMove, bestScore);
+		return bestMove;
 	}
-	
-	float Evaulate(Board board, bool isWhite)
+
+	float MinMaxPositionScore(Board board, int depth)
 	{
+		if (depth == 0 || board.IsInsufficientMaterial() || board.IsInCheckmate() || board.GetLegalMoves().Length == 0)
+			return Evaulate(board);
+		
+		List<Move> allMoves = board.GetLegalMoves().ToList();
+		allMoves = allMoves.OrderBy(x => rng.Next()).ToList();
+		
+		float bestScore = board.IsWhiteToMove ? float.MinValue : float.MaxValue;
+		foreach (Move move in allMoves)
+		{
+			board.MakeMove(move);
+			float score = MinMaxPositionScore(board, depth-1);
+			board.UndoMove(move);
+			if ((board.IsWhiteToMove && score > bestScore) || (!board.IsWhiteToMove && score < bestScore))
+				bestScore = score;
+		}
+
+		return bestScore;
+	}
+
+	float Evaulate(Board board)
+	{
+		if (board.IsInCheckmate()) return board.IsWhiteToMove ? float.MinValue : float.MaxValue;
+		if (board.IsInsufficientMaterial()) return 0;
+		if (board.GetLegalMoves().Length == 0) return 0;
+
 		float whitePieceValue = 0;
 		float blackPieceValue = 0;
 
@@ -99,7 +87,7 @@ public class EvilBot : IChessBot
 		whitePieceValue += pieceList[3].Count * 500;
 		whitePieceValue += pieceList[4].Count * 900;
 
-		whitePieceValue += KingValue(board , pieceList[5][0]);
+		whitePieceValue += KingValue(board, pieceList[5][0]);
 
 		foreach (var pawn in pieceList[6])
 		{
@@ -121,9 +109,9 @@ public class EvilBot : IChessBot
 		blackPieceValue += pieceList[9].Count * 500;
 		blackPieceValue += pieceList[10].Count * 900;
 
-		blackPieceValue += KingValue(board , pieceList[11][0]);
+		blackPieceValue += KingValue(board, pieceList[11][0]);
 
-		return isWhite ? whitePieceValue - blackPieceValue : blackPieceValue - whitePieceValue;
+		return whitePieceValue - blackPieceValue;
 	}
 
 	int MovePriority(Board board, Move move)
@@ -151,14 +139,6 @@ public class EvilBot : IChessBot
 		bool isMate = board.IsInCheckmate();
 		board.UndoMove(move);
 		return isMate;
-	}
-
-	bool MoveIsStalemate(Board board, Move move)
-	{
-		board.MakeMove(move);
-		bool isStalemate = board.IsDraw();
-		board.UndoMove(move);
-		return isStalemate;
 	}
 
 	bool MoveIsCheck(Board board, Move move)

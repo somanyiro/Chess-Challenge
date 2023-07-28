@@ -21,7 +21,7 @@ public class MyBot : IChessBot
 		foreach (Move move in allMoves)
 		{
 			board.MakeMove(move);
-			float score = MinMaxPositionScore(board, 2);
+			float score = MinMaxPositionScore(board, float.MinValue, float.MaxValue, 3);
 			board.UndoMove(move);
 			if ((board.IsWhiteToMove && score > bestScore) || (!board.IsWhiteToMove && score < bestScore))
 			{
@@ -33,22 +33,26 @@ public class MyBot : IChessBot
 		return bestMove;
 	}
 
-	float MinMaxPositionScore(Board board, int depth)
+	float MinMaxPositionScore(Board board, float alpha, float beta, int depth)
 	{
 		if (depth == 0 || board.IsInsufficientMaterial() || board.IsInCheckmate() || board.GetLegalMoves().Length == 0)
 			return Evaulate(board);
 		
 		List<Move> allMoves = board.GetLegalMoves().ToList();
 		allMoves = allMoves.OrderBy(x => rng.Next()).ToList();
+		allMoves = allMoves.OrderBy(x => MovePriority(board, x)).ToList();
 		
 		float bestScore = board.IsWhiteToMove ? float.MinValue : float.MaxValue;
 		foreach (Move move in allMoves)
 		{
 			board.MakeMove(move);
-			float score = MinMaxPositionScore(board, depth-1);
+			float score = MinMaxPositionScore(board, alpha, beta, depth-1);
 			board.UndoMove(move);
 			if ((board.IsWhiteToMove && score > bestScore) || (!board.IsWhiteToMove && score < bestScore))
 				bestScore = score;
+			if (board.IsWhiteToMove && score > alpha) alpha = score;
+			if (!board.IsWhiteToMove && score < beta) beta = score;
+			if (beta < alpha) break;
 		}
 
 		return bestScore;
