@@ -23,7 +23,7 @@ public class EvilBot : IChessBot
 		foreach (Move move in allMoves)
 		{
 			board.MakeMove(move);
-			float score = MinMaxPositionScore(board, 3);
+			float score = MinMaxPositionScore(board, 2);
 			board.UndoMove(move);
 			if ((board.IsWhiteToMove && score > bestScore) || (!board.IsWhiteToMove && score < bestScore))
 			{

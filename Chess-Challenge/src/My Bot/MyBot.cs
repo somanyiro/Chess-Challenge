@@ -13,6 +13,7 @@ public class MyBot : IChessBot
 		List<Move> allMoves = board.GetLegalMoves().ToList();
 
 		allMoves = allMoves.OrderBy(x => rng.Next()).ToList();//shuffle it to get a random best move at the end
+
 		//this should also be ordered by estimated move score
 
 		float bestScore = board.IsWhiteToMove ? float.MinValue : float.MaxValue;
@@ -40,7 +41,7 @@ public class MyBot : IChessBot
 		
 		List<Move> allMoves = board.GetLegalMoves().ToList();
 		allMoves = allMoves.OrderBy(x => rng.Next()).ToList();
-		allMoves = allMoves.OrderBy(x => MovePriority(board, x)).ToList();
+		allMoves = allMoves.OrderByDescending(x => MovePriority(board, x)).ToList();
 		
 		float bestScore = board.IsWhiteToMove ? float.MinValue : float.MaxValue;
 		foreach (Move move in allMoves)
@@ -129,8 +130,6 @@ public class MyBot : IChessBot
 		if (capture.IsBishop) score += 2;
 		if (capture.IsKnight) score += 2;
 		if (capture.IsPawn) score += 1;
-
-		score = (int)Math.Round(Map(score, 0, 8, 0, 2));//converting it so I can just add it to the search depth
 
 		return score;
 	}
