@@ -10,51 +10,42 @@ public class MyBot : IChessBot
 
 	public Move Think(Board board, Timer timer)
 	{
+		return GetBestMove(board, float.MinValue, float.MaxValue, 2).Item1;
+	}
+
+	///<summary>
+	///Uses a Min Max algorithm with alpha beta pruning to calculate the best move at a given depth
+	///</summary>
+	(Move, float) GetBestMove(Board board, float alpha, float beta, int depth)
+	{		
 		List<Move> allMoves = board.GetLegalMoves().ToList();
-
-		allMoves = allMoves.OrderBy(x => rng.Next()).ToList();//shuffle it to get a random best move at the end
-
+		allMoves = allMoves.OrderBy(x => rng.Next()).ToList();
+		allMoves = allMoves.OrderByDescending(x => MovePriority(board, x)).ToList();
+		
 		float bestScore = board.IsWhiteToMove ? float.MinValue : float.MaxValue;
 		Move bestMove = allMoves[0];
-
 		foreach (Move move in allMoves)
 		{
 			board.MakeMove(move);
-			float score = MinMaxPositionScore(board, float.MinValue, float.MaxValue, 2);
+			float score;
+			if (depth == 0 || board.IsInsufficientMaterial() || board.IsInCheckmate() || board.GetLegalMoves().Length == 0)
+				score = Evaulate(board);
+			else
+			{
+				score = GetBestMove(board, alpha, beta, depth-1).Item2;
+			}
 			board.UndoMove(move);
 			if ((board.IsWhiteToMove && score > bestScore) || (!board.IsWhiteToMove && score < bestScore))
 			{
 				bestScore = score;
 				bestMove = move;
 			}
-		}
-
-		return bestMove;
-	}
-
-	float MinMaxPositionScore(Board board, float alpha, float beta, int depth)
-	{
-		if (depth == 0 || board.IsInsufficientMaterial() || board.IsInCheckmate() || board.GetLegalMoves().Length == 0)
-			return Evaulate(board);
-		
-		List<Move> allMoves = board.GetLegalMoves().ToList();
-		allMoves = allMoves.OrderBy(x => rng.Next()).ToList();
-		allMoves = allMoves.OrderByDescending(x => MovePriority(board, x)).ToList();
-		
-		float bestScore = board.IsWhiteToMove ? float.MinValue : float.MaxValue;
-		foreach (Move move in allMoves)
-		{
-			board.MakeMove(move);
-			float score = MinMaxPositionScore(board, alpha, beta, depth-1);
-			board.UndoMove(move);
-			if ((board.IsWhiteToMove && score > bestScore) || (!board.IsWhiteToMove && score < bestScore))
-				bestScore = score;
 			if (board.IsWhiteToMove && score > alpha) alpha = score;
 			if (!board.IsWhiteToMove && score < beta) beta = score;
 			if (beta < alpha) break;
 		}
 
-		return bestScore;
+		return (bestMove, bestScore);
 	}
 
 	float Evaulate(Board board)
