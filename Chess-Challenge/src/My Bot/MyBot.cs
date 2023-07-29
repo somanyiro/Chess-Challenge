@@ -119,17 +119,11 @@ public class MyBot : IChessBot
 	{
 		int score = 0;
 
-		if (MoveIsCheck(board, move)) score += 5;
+		board.MakeMove(move);
+		if (board.IsInCheck()) score += 5;
+		board.UndoMove(move);
 
 		return score + (int)board.GetPiece(move.TargetSquare).PieceType;
-	}
-
-	bool MoveIsCheck(Board board, Move move)
-	{
-		board.MakeMove(move);
-		bool isCheck = board.IsInCheck();
-		board.UndoMove(move);
-		return isCheck;
 	}
 
 	float PawnValue(Board board, Piece piece)
