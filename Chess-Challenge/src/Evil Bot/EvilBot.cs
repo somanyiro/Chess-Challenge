@@ -15,6 +15,7 @@ public class EvilBot : IChessBot
 		List<Move> allMoves = board.GetLegalMoves().ToList();
 
 		allMoves = allMoves.OrderBy(x => rng.Next()).ToList();//shuffle it to get a random best move at the end
+
 		//this should also be ordered by estimated move score
 
 		float bestScore = board.IsWhiteToMove ? float.MinValue : float.MaxValue;
@@ -23,7 +24,7 @@ public class EvilBot : IChessBot
 		foreach (Move move in allMoves)
 		{
 			board.MakeMove(move);
-			float score = MinMaxPositionScore(board, 2);
+			float score = MinMaxPositionScore(board, float.MinValue, float.MaxValue, 2);
 			board.UndoMove(move);
 			if ((board.IsWhiteToMove && score > bestScore) || (!board.IsWhiteToMove && score < bestScore))
 			{
@@ -35,22 +36,26 @@ public class EvilBot : IChessBot
 		return bestMove;
 	}
 
-	float MinMaxPositionScore(Board board, int depth)
+	float MinMaxPositionScore(Board board, float alpha, float beta, int depth)
 	{
 		if (depth == 0 || board.IsInsufficientMaterial() || board.IsInCheckmate() || board.GetLegalMoves().Length == 0)
 			return Evaulate(board);
 		
 		List<Move> allMoves = board.GetLegalMoves().ToList();
 		allMoves = allMoves.OrderBy(x => rng.Next()).ToList();
+		allMoves = allMoves.OrderByDescending(x => MovePriority(board, x)).ToList();
 		
 		float bestScore = board.IsWhiteToMove ? float.MinValue : float.MaxValue;
 		foreach (Move move in allMoves)
 		{
 			board.MakeMove(move);
-			float score = MinMaxPositionScore(board, depth-1);
+			float score = MinMaxPositionScore(board, alpha, beta, depth-1);
 			board.UndoMove(move);
 			if ((board.IsWhiteToMove && score > bestScore) || (!board.IsWhiteToMove && score < bestScore))
 				bestScore = score;
+			if (board.IsWhiteToMove && score > alpha) alpha = score;
+			if (!board.IsWhiteToMove && score < beta) beta = score;
+			if (beta < alpha) break;
 		}
 
 		return bestScore;
@@ -128,8 +133,6 @@ public class EvilBot : IChessBot
 		if (capture.IsKnight) score += 2;
 		if (capture.IsPawn) score += 1;
 
-		score = (int)Math.Round(Map(score, 0, 8, 0, 2));//converting it so I can just add it to the search depth
-
 		return score;
 	}
 
@@ -199,7 +202,6 @@ public class EvilBot : IChessBot
 		return Map(numberOfPieces, 2, 32, 1, 0);
 	}
 	
-
 	float Map(float value, float old_min, float old_max, float new_min, float new_max)
 	{
 		return new_min + (value - old_min) * (new_max - new_min) / (old_max - old_min);

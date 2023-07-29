@@ -14,15 +14,13 @@ public class MyBot : IChessBot
 
 		allMoves = allMoves.OrderBy(x => rng.Next()).ToList();//shuffle it to get a random best move at the end
 
-		//this should also be ordered by estimated move score
-
 		float bestScore = board.IsWhiteToMove ? float.MinValue : float.MaxValue;
 		Move bestMove = allMoves[0];
 
 		foreach (Move move in allMoves)
 		{
 			board.MakeMove(move);
-			float score = MinMaxPositionScore(board, float.MinValue, float.MaxValue, 3);
+			float score = MinMaxPositionScore(board, float.MinValue, float.MaxValue, 2);
 			board.UndoMove(move);
 			if ((board.IsWhiteToMove && score > bestScore) || (!board.IsWhiteToMove && score < bestScore))
 			{
@@ -123,23 +121,7 @@ public class MyBot : IChessBot
 
 		if (MoveIsCheck(board, move)) score += 5;
 
-		Piece capture = board.GetPiece(move.TargetSquare);
-		
-		if (capture.IsQueen) score += 4;
-		if (capture.IsRook) score += 3;
-		if (capture.IsBishop) score += 2;
-		if (capture.IsKnight) score += 2;
-		if (capture.IsPawn) score += 1;
-
-		return score;
-	}
-
-	bool MoveIsCheckmate(Board board, Move move)
-	{
-		board.MakeMove(move);
-		bool isMate = board.IsInCheckmate();
-		board.UndoMove(move);
-		return isMate;
+		return score + (int)board.GetPiece(move.TargetSquare).PieceType;
 	}
 
 	bool MoveIsCheck(Board board, Move move)
@@ -164,30 +146,21 @@ public class MyBot : IChessBot
 
 	float KnightValue(Piece piece)
 	{
-		float positionMultiplier = piece.Square.File == 0 || piece.Square.File == 7 || piece.Square.Rank == 0 ? 0.5f : 1;
+		float positionMultiplier = piece.Square.File == 0 || piece.Square.File == 7 || piece.Square.Rank == 0 || piece.Square.Rank == 7 ? 0.5f : 1;
 
 		return 300 * positionMultiplier;
 	}
 
 	float BishopValue(Piece piece)
 	{
-		float positionMultiplier = piece.Square.Rank == 0 ? 0.5f : 1;
+		float positionMultiplier = piece.Square.Rank == 0 || piece.Square.Rank == 7 ? 0.5f : 1;
 
-		return 300 * positionMultiplier;
+		return 350 * positionMultiplier;
 	}
 
 	float KingValue(Board board, Piece piece)
 	{
-		//this doesn't want to work very well
-		/*
-		float earlyPositionFileMultiplier = Map(Math.Abs(piece.Square.File-4), 0, 4, 1, 1.1f);
-		float earlyPositionRankMultiplier = Map(piece.Square.Rank, 0, 7, 2f, 1);
-		float earlyPositionMultiplier = earlyPositionFileMultiplier * earlyPositionRankMultiplier;
-		float latePositionFileMultiplier = Map(Math.Abs(piece.Square.File-4), 0, 4, 1.1f, 1);
-		float latePositionRankMultiplier = Map(Math.Abs(piece.Square.Rank-4), 0, 4, 1.1f, 1);
-		float latePositionMultiplier = latePositionFileMultiplier * latePositionRankMultiplier;
-		*/
-		return 100000; /** Lerp(earlyPositionMultiplier, latePositionMultiplier, GamePhase(board));*/
+		return 100000;
 	}
 
 	float GamePhase(Board board)
@@ -199,7 +172,6 @@ public class MyBot : IChessBot
 		}
 		return Map(numberOfPieces, 2, 32, 1, 0);
 	}
-	
 
 	float Map(float value, float old_min, float old_max, float new_min, float new_max)
 	{
