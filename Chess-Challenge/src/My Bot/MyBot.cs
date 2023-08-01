@@ -141,20 +141,10 @@ public class MyBot : IChessBot
 		};
 
 		float positionMultiplier = Lerp(
-			earlyGameValueTable[piece.IsWhite ? piece.Square.Rank+1 : (int)Map(piece.Square.Rank, 0, 7, 7, 0)+1, piece.Square.File],
-			lateGameValueTable[piece.IsWhite ? piece.Square.Rank+1 : (int)Map(piece.Square.Rank, 0, 7, 7, 0)+1, piece.Square.File],
+			earlyGameValueTable[piece.IsWhite ? piece.Square.Rank-1 : (int)Map(piece.Square.Rank, 0, 7, 7, 0)-1, piece.Square.File],
+			lateGameValueTable[piece.IsWhite ? piece.Square.Rank-1 : (int)Map(piece.Square.Rank, 0, 7, 7, 0)-1, piece.Square.File],
 			GamePhase(board)
 		);
-
-		/* float fileMultiplier = Map(Math.Abs(piece.Square.File-4), 0, 4, 0.5f, 0);
-		float rankMultiplier = Map(Math.Abs(piece.Square.Rank-4), 0, 4, 0.5f, 0);
-
-		float earlyPositionMultiplier = 1 + fileMultiplier + rankMultiplier;
-
-		float latePositionMultiplier = piece.IsWhite ? Map(piece.Square.Rank, 0, 9, 1, 3) : Map(piece.Square.Rank, 9, 0, 1, 3);
-
-		return 100 * Lerp(earlyPositionMultiplier, latePositionMultiplier, GamePhase(board));
-		*/
 
 		return 100 * positionMultiplier;
 	}
