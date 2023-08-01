@@ -120,21 +120,31 @@ public class MyBot : IChessBot
 	float PawnValue(Board board, Piece piece)
 	{
 		//this is accoring to Hans Berliner's system but I don't know if the 7th and 8th rank are correct
-		float[,] valueTable = 
+		float[,] earlyGameValueTable = 
 		{
-			{0.90f, 0.95f, 1.05f, 1.10f, 1.10f, 1.05f, 0.95f, 0.90f},
 			{0.90f, 0.95f, 1.05f, 1.10f, 1.10f, 1.05f, 0.95f, 0.90f},
 			{0.90f, 0.95f, 1.05f, 1.15f, 1.15f, 1.05f, 0.95f, 0.90f},
 			{0.90f, 0.95f, 1.10f, 1.20f, 1.20f, 1.10f, 0.95f, 0.90f},
 			{0.97f, 1.03f, 1.17f, 1.27f, 1.27f, 1.17f, 1.03f, 0.97f},
 			{1.06f, 1.12f, 1.25f, 1.40f, 1.40f, 1.25f, 1.12f, 1.06f},
 			{5.63f, 5.63f, 5.63f, 5.63f, 5.63f, 5.63f, 5.63f, 5.63f},
-			{9.5f, 9.5f, 9.5f, 9.5f, 9.5f, 9.5f, 9.5f, 9.5f}
 		};
 
-		float positionMultiplier = valueTable[piece.IsWhite ? piece.Square.Rank : (int)Map(piece.Square.Rank, 0, 7, 7, 0), piece.Square.File];
+		float[,] lateGameValueTable = 
+		{
+			{1.20f, 1.05f, 0.95f, 0.90f, 0.90f, 0.95f, 1.05f, 1.20f},
+			{1.20f, 1.05f, 0.95f, 0.90f, 0.90f, 0.95f, 1.05f, 1.20f},
+			{1.25f, 1.10f, 1.00f, 0.95f, 0.95f, 1.00f, 1.10f, 1.25f},
+			{1.33f, 1.17f, 1.07f, 1.00f, 1.00f, 1.07f, 1.17f, 1.33f},
+			{1.45f, 1.29f, 1.16f, 1.05f, 1.05f, 1.16f, 1.29f, 1.45f},
+			{5.63f, 5.63f, 5.63f, 5.63f, 5.63f, 5.63f, 5.63f, 5.63f},
+		};
 
-		
+		float positionMultiplier = Lerp(
+			earlyGameValueTable[piece.IsWhite ? piece.Square.Rank+1 : (int)Map(piece.Square.Rank, 0, 7, 7, 0)+1, piece.Square.File],
+			lateGameValueTable[piece.IsWhite ? piece.Square.Rank+1 : (int)Map(piece.Square.Rank, 0, 7, 7, 0)+1, piece.Square.File],
+			GamePhase(board)
+		);
 
 		/* float fileMultiplier = Map(Math.Abs(piece.Square.File-4), 0, 4, 0.5f, 0);
 		float rankMultiplier = Map(Math.Abs(piece.Square.Rank-4), 0, 4, 0.5f, 0);
