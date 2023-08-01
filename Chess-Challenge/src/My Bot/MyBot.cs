@@ -76,8 +76,8 @@ public class MyBot : IChessBot
 			whitePieceValue += BishopValue(bishop);
 		}
 
-		whitePieceValue += pieceList[3].Count * 500;
-		whitePieceValue += pieceList[4].Count * 900;
+		whitePieceValue += pieceList[3].Count * 563;
+		whitePieceValue += pieceList[4].Count * 950;
 
 		whitePieceValue += KingValue(board, pieceList[5][0]);
 
@@ -98,8 +98,8 @@ public class MyBot : IChessBot
 			blackPieceValue += BishopValue(bishop);
 		}
 
-		blackPieceValue += pieceList[9].Count * 500;
-		blackPieceValue += pieceList[10].Count * 900;
+		blackPieceValue += pieceList[9].Count * 563;
+		blackPieceValue += pieceList[10].Count * 950;
 
 		blackPieceValue += KingValue(board, pieceList[11][0]);
 
@@ -119,7 +119,24 @@ public class MyBot : IChessBot
 
 	float PawnValue(Board board, Piece piece)
 	{
-		float fileMultiplier = Map(Math.Abs(piece.Square.File-4), 0, 4, 0.5f, 0);
+		//this is accoring to Hans Berliner's system but I don't know if the 7th and 8th rank are correct
+		float[,] valueTable = 
+		{
+			{0.90f, 0.95f, 1.05f, 1.10f, 1.10f, 1.05f, 0.95f, 0.90f},
+			{0.90f, 0.95f, 1.05f, 1.10f, 1.10f, 1.05f, 0.95f, 0.90f},
+			{0.90f, 0.95f, 1.05f, 1.15f, 1.15f, 1.05f, 0.95f, 0.90f},
+			{0.90f, 0.95f, 1.10f, 1.20f, 1.20f, 1.10f, 0.95f, 0.90f},
+			{0.97f, 1.03f, 1.17f, 1.27f, 1.27f, 1.17f, 1.03f, 0.97f},
+			{1.06f, 1.12f, 1.25f, 1.40f, 1.40f, 1.25f, 1.12f, 1.06f},
+			{5.63f, 5.63f, 5.63f, 5.63f, 5.63f, 5.63f, 5.63f, 5.63f},
+			{9.5f, 9.5f, 9.5f, 9.5f, 9.5f, 9.5f, 9.5f, 9.5f}
+		};
+
+		float positionMultiplier = valueTable[piece.IsWhite ? piece.Square.Rank : (int)Map(piece.Square.Rank, 0, 7, 7, 0), piece.Square.File];
+
+		
+
+		/* float fileMultiplier = Map(Math.Abs(piece.Square.File-4), 0, 4, 0.5f, 0);
 		float rankMultiplier = Map(Math.Abs(piece.Square.Rank-4), 0, 4, 0.5f, 0);
 
 		float earlyPositionMultiplier = 1 + fileMultiplier + rankMultiplier;
@@ -127,20 +144,23 @@ public class MyBot : IChessBot
 		float latePositionMultiplier = piece.IsWhite ? Map(piece.Square.Rank, 0, 9, 1, 3) : Map(piece.Square.Rank, 9, 0, 1, 3);
 
 		return 100 * Lerp(earlyPositionMultiplier, latePositionMultiplier, GamePhase(board));
+		*/
+
+		return 100 * positionMultiplier;
 	}
 
 	float KnightValue(Piece piece)
 	{
 		float positionMultiplier = piece.Square.File == 0 || piece.Square.File == 7 || piece.Square.Rank == 0 || piece.Square.Rank == 7 ? 0.5f : 1;
 
-		return 300 * positionMultiplier;
+		return 305 * positionMultiplier;
 	}
 
 	float BishopValue(Piece piece)
 	{
 		float positionMultiplier = piece.Square.Rank == 0 || piece.Square.Rank == 7 ? 0.5f : 1;
 
-		return 350 * positionMultiplier;
+		return 333 * positionMultiplier;
 	}
 
 	float KingValue(Board board, Piece piece)
