@@ -39,6 +39,11 @@ namespace ChessChallenge.Application
                     startPos.Y += spacingY;
                 }
             }
+
+            if (controller.PlayerWhite.IsBot != controller.PlayerBlack.IsBot)
+            {
+                
+            }
         }
     }
 }

@@ -7,10 +7,18 @@ using System.Numerics;
 public class MyBot : IChessBot
 {
 	Random rng = new Random();
+	float evaulation = 0f;
+
+	public float GetEvaulation()
+	{
+		return evaulation;
+	}
 
 	public Move Think(Board board, Timer timer)
 	{
-		return GetBestMove(board, float.MinValue, float.MaxValue, 4).Item1;
+		(Move, float) bestMove = GetBestMove(board, float.MinValue, float.MaxValue, 4);
+		evaulation = bestMove.Item2;
+		return bestMove.Item1;
 	}
 
 	///<summary>
