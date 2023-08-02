@@ -10,7 +10,7 @@ public class MyBot : IChessBot
 
 	public Move Think(Board board, Timer timer)
 	{
-		return GetBestMove(board, float.MinValue, float.MaxValue, 2).Item1;
+		return GetBestMove(board, float.MinValue, float.MaxValue, 4).Item1;
 	}
 
 	///<summary>
@@ -140,9 +140,11 @@ public class MyBot : IChessBot
 			{5.63f, 5.63f, 5.63f, 5.63f, 5.63f, 5.63f, 5.63f, 5.63f},
 		};
 
+		int relativeRank = piece.IsWhite ? piece.Square.Rank-1 : (int)Map(piece.Square.Rank, 0, 7, 7, 0)-1;
+
 		float positionMultiplier = Lerp(
-			earlyGameValueTable[piece.IsWhite ? piece.Square.Rank-1 : (int)Map(piece.Square.Rank, 0, 7, 7, 0)-1, piece.Square.File],
-			lateGameValueTable[piece.IsWhite ? piece.Square.Rank-1 : (int)Map(piece.Square.Rank, 0, 7, 7, 0)-1, piece.Square.File],
+			earlyGameValueTable[relativeRank, piece.Square.File],
+			lateGameValueTable[relativeRank, piece.Square.File],
 			GamePhase(board)
 		);
 
