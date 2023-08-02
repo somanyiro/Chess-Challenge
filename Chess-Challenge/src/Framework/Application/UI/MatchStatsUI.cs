@@ -40,10 +40,33 @@ namespace ChessChallenge.Application
                 }
             }
 
-            if (controller.PlayerWhite.IsBot != controller.PlayerBlack.IsBot)
-            {
-                
-            }
+            float myBotEvaulation = 
+                controller.PlayerWhite.PlayerType == ChallengeController.PlayerType.MyBot ? 
+                controller.PlayerWhite.Bot.GetEvaulation() : 
+                controller.PlayerBlack.Bot.GetEvaulation();
+
+            UIHelper.DrawText(
+                $"MyBot evaulation: {myBotEvaulation}",
+                UIHelper.Scale(new Vector2(1500, 800)),
+                UIHelper.ScaleInt(35),
+                1,
+                Color.WHITE);
+            
+            float evilBotEvaulation;
+
+            if (controller.PlayerWhite.PlayerType == ChallengeController.PlayerType.EvilBot)
+                evilBotEvaulation = controller.PlayerWhite.Bot.GetEvaulation();
+            else if (controller.PlayerBlack.PlayerType == ChallengeController.PlayerType.EvilBot)
+                evilBotEvaulation = controller.PlayerBlack.Bot.GetEvaulation();
+            else return;
+
+            UIHelper.DrawText(
+                $"EvilBot evaulation: {evilBotEvaulation}",
+                UIHelper.Scale(new Vector2(1500, 850)),
+                UIHelper.ScaleInt(35),
+                1,
+                Color.WHITE);
+
         }
     }
 }
