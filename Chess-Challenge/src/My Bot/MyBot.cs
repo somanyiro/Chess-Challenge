@@ -16,7 +16,7 @@ public class MyBot : IChessBot
 
 	public Move Think(Board board, Timer timer)
 	{
-		(Move, float) bestMove = GetBestMove(board, float.MinValue, float.MaxValue, 2);
+		(Move, float) bestMove = GetBestMove(board, float.MinValue, float.MaxValue, 3);
 		evaulation = bestMove.Item2;
 		return bestMove.Item1;
 	}
@@ -69,36 +69,43 @@ public class MyBot : IChessBot
 		{
 			foreach (Piece piece in list) 
 			{
+				float pieceValue;
 				switch (piece.PieceType) 
 				{
 					case PieceType.Pawn:
-						if (piece.IsWhite) whitePieceValue += PawnValue(board, piece);
-						else blackPieceValue += PawnValue(board, piece);
+						pieceValue = PawnValue(board, piece);
+						if (piece.IsWhite) whitePieceValue += pieceValue;
+						else blackPieceValue += pieceValue;
 						break;
 
 					case PieceType.Knight:
-						if (piece.IsWhite) whitePieceValue += KnightValue(board, piece);
-						else blackPieceValue += KnightValue(board, piece);
+						pieceValue = KnightValue(board, piece);
+						if (piece.IsWhite) whitePieceValue += pieceValue;
+						else blackPieceValue += pieceValue;
 						break;
 
 					case PieceType.Bishop:
-						if (piece.IsWhite) whitePieceValue += 333 * SliderValueMultiplier(board, piece);
-						else blackPieceValue += 333 * SliderValueMultiplier(board, piece);
+						pieceValue = 333 * SliderValueMultiplier(board, piece);
+						if (piece.IsWhite) whitePieceValue += pieceValue;
+						else blackPieceValue += pieceValue;
 						break;
 
 					case PieceType.Rook:
-						if (piece.IsWhite) whitePieceValue += 563 * SliderValueMultiplier(board, piece);
-						else blackPieceValue += 563 * SliderValueMultiplier(board, piece);
+						pieceValue = 563 * SliderValueMultiplier(board, piece);
+						if (piece.IsWhite) whitePieceValue += pieceValue;
+						else blackPieceValue += pieceValue;
 						break;
 
 					case PieceType.Queen:
-						if (piece.IsWhite) whitePieceValue += 950 * SliderValueMultiplier(board, piece);
-						else blackPieceValue += 950 * SliderValueMultiplier(board, piece);
+						pieceValue = 950 * SliderValueMultiplier(board, piece);
+						if (piece.IsWhite) whitePieceValue += pieceValue;
+						else blackPieceValue += pieceValue;
 						break;
 
 					case PieceType.King:
-						if (piece.IsWhite) whitePieceValue += KingValue(board, piece);
-						else blackPieceValue += KingValue(board, piece);
+						pieceValue = KingValue(board, piece);
+						if (piece.IsWhite) whitePieceValue += pieceValue;
+						else blackPieceValue += pieceValue;
 						break;
 					
 					default:
