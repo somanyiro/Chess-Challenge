@@ -64,52 +64,48 @@ public class MyBot : IChessBot
 
 		float whitePieceValue = 0;
 		float blackPieceValue = 0;
-
-		PieceList[] pieceList = board.GetAllPieceLists();
 	
-		foreach (var pawn in pieceList[0])
+		foreach (PieceList list in board.GetAllPieceLists()) 
 		{
-			whitePieceValue += PawnValue(board, pawn);
+			foreach (Piece piece in list) 
+			{
+				switch (piece.PieceType) 
+				{
+					case PieceType.Pawn:
+						if (piece.IsWhite) whitePieceValue += PawnValue(board, piece);
+						else blackPieceValue += PawnValue(board, piece);
+						break;
+
+					case PieceType.Knight:
+						if (piece.IsWhite) whitePieceValue += KnightValue(board, piece);
+						else blackPieceValue += KnightValue(board, piece);
+						break;
+
+					case PieceType.Bishop:
+						if (piece.IsWhite) whitePieceValue += 333 * SliderValueMultiplier(board, piece);
+						else blackPieceValue += 333 * SliderValueMultiplier(board, piece);
+						break;
+
+					case PieceType.Rook:
+						if (piece.IsWhite) whitePieceValue += 563 * SliderValueMultiplier(board, piece);
+						else blackPieceValue += 563 * SliderValueMultiplier(board, piece);
+						break;
+
+					case PieceType.Queen:
+						if (piece.IsWhite) whitePieceValue += 950 * SliderValueMultiplier(board, piece);
+						else blackPieceValue += 950 * SliderValueMultiplier(board, piece);
+						break;
+
+					case PieceType.King:
+						if (piece.IsWhite) whitePieceValue += KingValue(board, piece);
+						else blackPieceValue += KingValue(board, piece);
+						break;
+					
+					default:
+						break;
+				}
+			}
 		}
-
-		foreach (var knight in pieceList[1])
-		{
-			whitePieceValue += KnightValue(knight);
-		}
-
-		if (pieceList[2].Count >= 2) whitePieceValue += 150; // bishop pair STRONG
-
-		foreach (var bishop in pieceList[2])
-		{
-			whitePieceValue += BishopValue(bishop);
-		}
-
-		whitePieceValue += pieceList[3].Count * 563;
-		whitePieceValue += pieceList[4].Count * 950;
-
-		whitePieceValue += KingValue(board, pieceList[5][0]);
-
-		foreach (var pawn in pieceList[6])
-		{
-			blackPieceValue += PawnValue(board, pawn);
-		}
-
-		foreach (var knight in pieceList[7])
-		{
-			blackPieceValue += KnightValue(knight);
-		}
-
-		if (pieceList[8].Count >= 2) blackPieceValue += 150;
-
-		foreach (var bishop in pieceList[8])
-		{
-			blackPieceValue += BishopValue(bishop);
-		}
-
-		blackPieceValue += pieceList[9].Count * 563;
-		blackPieceValue += pieceList[10].Count * 950;
-
-		blackPieceValue += KingValue(board, pieceList[11][0]);
 
 		return whitePieceValue - blackPieceValue;
 	}
@@ -159,18 +155,17 @@ public class MyBot : IChessBot
 		return 100 * positionMultiplier;
 	}
 
-	float KnightValue(Piece piece)
+	float KnightValue(Board board, Piece piece)
 	{
-		float positionMultiplier = piece.Square.File == 0 || piece.Square.File == 7 || piece.Square.Rank == 0 || piece.Square.Rank == 7 ? 0.5f : 1;
+		float positionMultiplier = piece.Square.File == 0 || piece.Square.File == 7 || piece.Square.Rank == 0 || piece.Square.Rank == 7 ? 0.7f : 1;
+		float gameStateMultiplier = Map(PositionOpen(board), 0, 1, 1.5f, 1);
 
-		return 305 * positionMultiplier;
+		return 305 * positionMultiplier * gameStateMultiplier;
 	}
 
-	float BishopValue(Piece piece)
+	float SliderValueMultiplier(Board board, Piece piece)
 	{
-		float positionMultiplier = piece.Square.Rank == 0 || piece.Square.Rank == 7 ? 0.5f : 1;
-
-		return 333 * positionMultiplier;
+		return Map(PositionOpen(board), 0, 1, 0.8f, 1.1f);
 	}
 
 	float KingValue(Board board, Piece piece)
