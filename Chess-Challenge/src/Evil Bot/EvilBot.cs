@@ -18,7 +18,7 @@ public class EvilBot : IChessBot
 
 	public Move Think(Board board, Timer timer)
 	{
-		(Move, float) bestMove = GetBestMove(board, float.MinValue, float.MaxValue, 3);
+		(Move, float) bestMove = GetBestMove(board, float.MinValue, float.MaxValue, 2);
 		evaulation = bestMove.Item2;
 		return bestMove.Item1;
 	}
@@ -66,52 +66,55 @@ public class EvilBot : IChessBot
 
 		float whitePieceValue = 0;
 		float blackPieceValue = 0;
-
-		PieceList[] pieceList = board.GetAllPieceLists();
 	
-		foreach (var pawn in pieceList[0])
+		foreach (PieceList list in board.GetAllPieceLists())
 		{
-			whitePieceValue += PawnValue(board, pawn);
+			foreach (Piece piece in list)
+			{
+				float pieceValue;
+				switch (piece.PieceType) 
+				{
+					case PieceType.Pawn:
+						pieceValue = PawnValue(board, piece);
+						if (piece.IsWhite) whitePieceValue += pieceValue;
+						else blackPieceValue += pieceValue;
+						break;
+
+					case PieceType.Knight:
+						pieceValue = KnightValue(board, piece);
+						if (piece.IsWhite) whitePieceValue += pieceValue;
+						else blackPieceValue += pieceValue;
+						break;
+
+					case PieceType.Bishop:
+						pieceValue = 333 * SliderValueMultiplier(board, piece);
+						if (piece.IsWhite) whitePieceValue += pieceValue;
+						else blackPieceValue += pieceValue;
+						break;
+
+					case PieceType.Rook:
+						pieceValue = 563 * SliderValueMultiplier(board, piece);
+						if (piece.IsWhite) whitePieceValue += pieceValue;
+						else blackPieceValue += pieceValue;
+						break;
+
+					case PieceType.Queen:
+						pieceValue = 950 * SliderValueMultiplier(board, piece);
+						if (piece.IsWhite) whitePieceValue += pieceValue;
+						else blackPieceValue += pieceValue;
+						break;
+
+					case PieceType.King:
+						pieceValue = KingValue(board, piece);
+						if (piece.IsWhite) whitePieceValue += pieceValue;
+						else blackPieceValue += pieceValue;
+						break;
+					
+					default:
+						break;
+				}
+			}
 		}
-
-		foreach (var knight in pieceList[1])
-		{
-			whitePieceValue += KnightValue(knight);
-		}
-
-		if (pieceList[2].Count >= 2) whitePieceValue += 150; // bishop pair STRONG
-
-		foreach (var bishop in pieceList[2])
-		{
-			whitePieceValue += BishopValue(bishop);
-		}
-
-		whitePieceValue += pieceList[3].Count * 500;
-		whitePieceValue += pieceList[4].Count * 900;
-
-		whitePieceValue += KingValue(board, pieceList[5][0]);
-
-		foreach (var pawn in pieceList[6])
-		{
-			blackPieceValue += PawnValue(board, pawn);
-		}
-
-		foreach (var knight in pieceList[7])
-		{
-			blackPieceValue += KnightValue(knight);
-		}
-
-		if (pieceList[8].Count >= 2) blackPieceValue += 150;
-
-		foreach (var bishop in pieceList[8])
-		{
-			blackPieceValue += BishopValue(bishop);
-		}
-
-		blackPieceValue += pieceList[9].Count * 500;
-		blackPieceValue += pieceList[10].Count * 900;
-
-		blackPieceValue += KingValue(board, pieceList[11][0]);
 
 		return whitePieceValue - blackPieceValue;
 	}
@@ -129,28 +132,49 @@ public class EvilBot : IChessBot
 
 	float PawnValue(Board board, Piece piece)
 	{
-		float fileMultiplier = Map(Math.Abs(piece.Square.File-4), 0, 4, 0.5f, 0);
-		float rankMultiplier = Map(Math.Abs(piece.Square.Rank-4), 0, 4, 0.5f, 0);
+		//this is accoring to Hans Berliner's system but I don't know if the 7th and 8th rank are correct
+		float[,] earlyGameValueTable = 
+		{
+			{0.90f, 0.95f, 1.05f, 1.10f, 1.10f, 1.05f, 0.95f, 0.90f},
+			{0.90f, 0.95f, 1.05f, 1.15f, 1.15f, 1.05f, 0.95f, 0.90f},
+			{0.90f, 0.95f, 1.10f, 1.20f, 1.20f, 1.10f, 0.95f, 0.90f},
+			{0.97f, 1.03f, 1.17f, 1.27f, 1.27f, 1.17f, 1.03f, 0.97f},
+			{1.06f, 1.12f, 1.25f, 1.40f, 1.40f, 1.25f, 1.12f, 1.06f},
+			{5.63f, 5.63f, 5.63f, 5.63f, 5.63f, 5.63f, 5.63f, 5.63f},
+		};
 
-		float earlyPositionMultiplier = 1 + fileMultiplier + rankMultiplier;
+		float[,] lateGameValueTable = 
+		{
+			{1.20f, 1.05f, 0.95f, 0.90f, 0.90f, 0.95f, 1.05f, 1.20f},
+			{1.20f, 1.05f, 0.95f, 0.90f, 0.90f, 0.95f, 1.05f, 1.20f},
+			{1.25f, 1.10f, 1.00f, 0.95f, 0.95f, 1.00f, 1.10f, 1.25f},
+			{1.33f, 1.17f, 1.07f, 1.00f, 1.00f, 1.07f, 1.17f, 1.33f},
+			{1.45f, 1.29f, 1.16f, 1.05f, 1.05f, 1.16f, 1.29f, 1.45f},
+			{5.63f, 5.63f, 5.63f, 5.63f, 5.63f, 5.63f, 5.63f, 5.63f},
+		};
 
-		float latePositionMultiplier = piece.IsWhite ? Map(piece.Square.Rank, 0, 9, 1, 3) : Map(piece.Square.Rank, 9, 0, 1, 3);
+		int relativeRank = piece.IsWhite ? piece.Square.Rank-1 : (int)Map(piece.Square.Rank, 0, 7, 7, 0)-1;
 
-		return 100 * Lerp(earlyPositionMultiplier, latePositionMultiplier, GamePhase(board));
+		float positionMultiplier = Lerp(
+			earlyGameValueTable[relativeRank, piece.Square.File],
+			lateGameValueTable[relativeRank, piece.Square.File],
+			GamePhase(board)
+		);
+
+		return 100 * positionMultiplier;
 	}
 
-	float KnightValue(Piece piece)
+	float KnightValue(Board board, Piece piece)
 	{
-		float positionMultiplier = piece.Square.File == 0 || piece.Square.File == 7 || piece.Square.Rank == 0 || piece.Square.Rank == 7 ? 0.5f : 1;
+		float positionMultiplier = piece.Square.File == 0 || piece.Square.File == 7 || piece.Square.Rank == 0 || piece.Square.Rank == 7 ? 0.7f : 1;
+		float gameStateMultiplier = Map(PositionOpen(board), 0, 1, 1.5f, 1);
 
-		return 300 * positionMultiplier;
+		return 305 * positionMultiplier * gameStateMultiplier;
 	}
 
-	float BishopValue(Piece piece)
+	float SliderValueMultiplier(Board board, Piece piece)
 	{
-		float positionMultiplier = piece.Square.Rank == 0 || piece.Square.Rank == 7 ? 0.5f : 1;
-
-		return 350 * positionMultiplier;
+		return Map(PositionOpen(board), 0, 1, 0.8f, 1.1f);
 	}
 
 	float KingValue(Board board, Piece piece)
@@ -158,6 +182,15 @@ public class EvilBot : IChessBot
 		return 100000;
 	}
 
+	/// <summary>Returns 0-1 depending on how open the position is which is determinaed by pawn structure</summary>
+	float PositionOpen(Board board)
+	{
+		return Map(
+			board.GetPieceList(PieceType.Pawn, true).Count() + board.GetPieceList(PieceType.Pawn, false).Count(),
+			0, 16, 0, 1);
+	}
+
+	/// <summary>Returns 0-1 depending on the number of pieces left on the board</summary>
 	float GamePhase(Board board)
 	{
 		int numberOfPieces = 0;

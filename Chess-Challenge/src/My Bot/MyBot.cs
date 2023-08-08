@@ -6,8 +6,8 @@ using System.Numerics;
 
 public class MyBot : IChessBot
 {
-	Random rng = new Random();
 	float evaulation = 0f;
+	Random rnd = new Random();
 
 	public float GetEvaulation()
 	{
@@ -25,9 +25,9 @@ public class MyBot : IChessBot
 	///Uses a Min Max algorithm with alpha beta pruning to calculate the best move at a given depth
 	///</summary>
 	(Move, float) GetBestMove(Board board, float alpha, float beta, int depth)
-	{		
+	{
 		List<Move> allMoves = board.GetLegalMoves().ToList();
-		allMoves = allMoves.OrderBy(x => rng.Next()).ToList();
+		allMoves = allMoves.OrderBy(x => rnd.Next()).ToList();
 		allMoves = allMoves.OrderByDescending(x => MovePriority(board, x)).ToList();
 		
 		float bestScore = board.IsWhiteToMove ? float.MinValue : float.MaxValue;
@@ -64,53 +64,50 @@ public class MyBot : IChessBot
 
 		float whitePieceValue = 0;
 		float blackPieceValue = 0;
-	
-		foreach (PieceList list in board.GetAllPieceLists()) 
+
+		foreach (Piece piece in board.GetAllPieceLists().SelectMany(x => x).ToList())
 		{
-			foreach (Piece piece in list) 
+			float pieceValue;
+			switch (piece.PieceType) 
 			{
-				float pieceValue;
-				switch (piece.PieceType) 
-				{
-					case PieceType.Pawn:
-						pieceValue = PawnValue(board, piece);
-						if (piece.IsWhite) whitePieceValue += pieceValue;
-						else blackPieceValue += pieceValue;
-						break;
+				case PieceType.Pawn:
+					pieceValue = PawnValue(board, piece);
+					if (piece.IsWhite) whitePieceValue += pieceValue;
+					else blackPieceValue += pieceValue;
+					break;
 
-					case PieceType.Knight:
-						pieceValue = KnightValue(board, piece);
-						if (piece.IsWhite) whitePieceValue += pieceValue;
-						else blackPieceValue += pieceValue;
-						break;
+				case PieceType.Knight:
+					pieceValue = KnightValue(board, piece);
+					if (piece.IsWhite) whitePieceValue += pieceValue;
+					else blackPieceValue += pieceValue;
+					break;
 
-					case PieceType.Bishop:
-						pieceValue = 333 * SliderValueMultiplier(board, piece);
-						if (piece.IsWhite) whitePieceValue += pieceValue;
-						else blackPieceValue += pieceValue;
-						break;
+				case PieceType.Bishop:
+					pieceValue = 333 * SliderValueMultiplier(board, piece);
+					if (piece.IsWhite) whitePieceValue += pieceValue;
+					else blackPieceValue += pieceValue;
+					break;
 
-					case PieceType.Rook:
-						pieceValue = 563 * SliderValueMultiplier(board, piece);
-						if (piece.IsWhite) whitePieceValue += pieceValue;
-						else blackPieceValue += pieceValue;
-						break;
+				case PieceType.Rook:
+					pieceValue = 563 * SliderValueMultiplier(board, piece);
+					if (piece.IsWhite) whitePieceValue += pieceValue;
+					else blackPieceValue += pieceValue;
+					break;
 
-					case PieceType.Queen:
-						pieceValue = 950 * SliderValueMultiplier(board, piece);
-						if (piece.IsWhite) whitePieceValue += pieceValue;
-						else blackPieceValue += pieceValue;
-						break;
+				case PieceType.Queen:
+					pieceValue = 950 * SliderValueMultiplier(board, piece);
+					if (piece.IsWhite) whitePieceValue += pieceValue;
+					else blackPieceValue += pieceValue;
+					break;
 
-					case PieceType.King:
-						pieceValue = KingValue(board, piece);
-						if (piece.IsWhite) whitePieceValue += pieceValue;
-						else blackPieceValue += pieceValue;
-						break;
-					
-					default:
-						break;
-				}
+				case PieceType.King:
+					pieceValue = KingValue(board, piece);
+					if (piece.IsWhite) whitePieceValue += pieceValue;
+					else blackPieceValue += pieceValue;
+					break;
+				
+				default:
+					break;
 			}
 		}
 
