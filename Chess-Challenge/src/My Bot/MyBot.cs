@@ -16,7 +16,7 @@ public class MyBot : IChessBot
 
 	public Move Think(Board board, Timer timer)
 	{
-		(Move, float) bestMove = GetBestMove(board, float.MinValue, float.MaxValue, 4);
+		(Move, float) bestMove = GetBestMove(board, float.MinValue, float.MaxValue, 2);
 		evaulation = bestMove.Item2;
 		return bestMove.Item1;
 	}
@@ -178,6 +178,15 @@ public class MyBot : IChessBot
 		return 100000;
 	}
 
+	/// <summary>Returns 0-1 depending on how open the position is which is determinaed by pawn structure</summary>
+	float PositionOpen(Board board)
+	{
+		return Map(
+			board.GetPieceList(PieceType.Pawn, true).Count() + board.GetPieceList(PieceType.Pawn, false).Count(),
+			0, 16, 0, 1);
+	}
+
+	/// <summary>Returns 0-1 depending on the number of pieces left on the board</summary>
 	float GamePhase(Board board)
 	{
 		int numberOfPieces = 0;
