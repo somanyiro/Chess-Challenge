@@ -62,56 +62,45 @@ public class MyBot : IChessBot
 		if (board.IsInsufficientMaterial()) return 0;
 		if (board.GetLegalMoves().Length == 0) return 0;
 
-		float whitePieceValue = 0;
-		float blackPieceValue = 0;
+		float result = 0;
 
 		foreach (Piece piece in board.GetAllPieceLists().SelectMany(x => x).ToList())
 		{
-			float pieceValue;
+			float pieceValue = 0;
 			switch (piece.PieceType) 
 			{
 				case PieceType.Pawn:
-					pieceValue = PawnValue(board, piece);
-					if (piece.IsWhite) whitePieceValue += pieceValue;
-					else blackPieceValue += pieceValue;
+					pieceValue = 100 * PawnValue(board, piece);
 					break;
 
 				case PieceType.Knight:
-					pieceValue = KnightValue(board, piece);
-					if (piece.IsWhite) whitePieceValue += pieceValue;
-					else blackPieceValue += pieceValue;
+					pieceValue = 305 * KnightValue(board, piece);
 					break;
 
 				case PieceType.Bishop:
 					pieceValue = 333 * SliderValueMultiplier(board, piece);
-					if (piece.IsWhite) whitePieceValue += pieceValue;
-					else blackPieceValue += pieceValue;
 					break;
 
 				case PieceType.Rook:
 					pieceValue = 563 * SliderValueMultiplier(board, piece);
-					if (piece.IsWhite) whitePieceValue += pieceValue;
-					else blackPieceValue += pieceValue;
 					break;
 
 				case PieceType.Queen:
 					pieceValue = 950 * SliderValueMultiplier(board, piece);
-					if (piece.IsWhite) whitePieceValue += pieceValue;
-					else blackPieceValue += pieceValue;
 					break;
 
 				case PieceType.King:
 					pieceValue = KingValue(board, piece);
-					if (piece.IsWhite) whitePieceValue += pieceValue;
-					else blackPieceValue += pieceValue;
 					break;
 				
 				default:
 					break;
 			}
+			if (piece.IsWhite) result += pieceValue;
+			else result -= pieceValue;
 		}
 
-		return whitePieceValue - blackPieceValue;
+		return result;
 	}
 
 	int MovePriority(Board board, Move move)
@@ -156,7 +145,7 @@ public class MyBot : IChessBot
 			GamePhase(board)
 		);
 
-		return 100 * positionMultiplier;
+		return positionMultiplier;
 	}
 
 	float KnightValue(Board board, Piece piece)
@@ -164,7 +153,7 @@ public class MyBot : IChessBot
 		float positionMultiplier = piece.Square.File == 0 || piece.Square.File == 7 || piece.Square.Rank == 0 || piece.Square.Rank == 7 ? 0.7f : 1;
 		float gameStateMultiplier = Map(PositionOpen(board), 0, 1, 1.5f, 1);
 
-		return 305 * positionMultiplier * gameStateMultiplier;
+		return positionMultiplier * gameStateMultiplier;
 	}
 
 	float SliderValueMultiplier(Board board, Piece piece)
