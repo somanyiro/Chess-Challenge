@@ -16,7 +16,7 @@ public class MyBot : IChessBot
 
 	public Move Think(Board board, Timer timer)
 	{
-		(Move, float) bestMove = GetBestMove(board, float.MinValue, float.MaxValue, 3);
+		(Move, float) bestMove = GetBestMove(board, float.MinValue, float.MaxValue, 2);
 		evaluation = bestMove.Item2;
 		return bestMove.Item1;
 	}
@@ -70,23 +70,23 @@ public class MyBot : IChessBot
 			switch (piece.PieceType) 
 			{
 				case PieceType.Pawn:
-					pieceValue = 100 * PawnValue(board, piece);
+					pieceValue = 10.0f * PawnValue(board, piece);
 					break;
 
 				case PieceType.Knight:
-					pieceValue = 305 * KnightValue(board, piece);
+					pieceValue = 30.5f * KnightValue(board, piece);
 					break;
 
 				case PieceType.Bishop:
-					pieceValue = 333 * SliderValueMultiplier(board, piece);
+					pieceValue = 33.3f * SliderValueMultiplier(board, piece);
 					break;
 
 				case PieceType.Rook:
-					pieceValue = 563 * SliderValueMultiplier(board, piece);
+					pieceValue = 56.3f * SliderValueMultiplier(board, piece);
 					break;
 
 				case PieceType.Queen:
-					pieceValue = 950 * SliderValueMultiplier(board, piece);
+					pieceValue = 95.0f * SliderValueMultiplier(board, piece);
 					break;
 
 				case PieceType.King:
