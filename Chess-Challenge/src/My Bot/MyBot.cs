@@ -6,18 +6,18 @@ using System.Numerics;
 
 public class MyBot : IChessBot
 {
-	float evaulation = 0f;
+	float evaluation = 0f;
 	Random rnd = new Random();
 
-	public float GetEvaulation()
+	public float GetEvaluation()
 	{
-		return evaulation;
+		return evaluation;
 	}
 
 	public Move Think(Board board, Timer timer)
 	{
 		(Move, float) bestMove = GetBestMove(board, float.MinValue, float.MaxValue, 3);
-		evaulation = bestMove.Item2;
+		evaluation = bestMove.Item2;
 		return bestMove.Item1;
 	}
 

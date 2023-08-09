@@ -42,8 +42,8 @@ namespace ChessChallenge.Application
 
             float myBotEvaulation = 
                 controller.PlayerWhite.PlayerType == ChallengeController.PlayerType.MyBot ? 
-                controller.PlayerWhite.Bot.GetEvaulation() : 
-                controller.PlayerBlack.Bot.GetEvaulation();
+                controller.PlayerWhite.Bot.GetEvaluation() : 
+                controller.PlayerBlack.Bot.GetEvaluation();
 
             UIHelper.DrawText(
                 $"MyBot evaulation: {myBotEvaulation}",
@@ -55,9 +55,9 @@ namespace ChessChallenge.Application
             float evilBotEvaulation;
 
             if (controller.PlayerWhite.PlayerType == ChallengeController.PlayerType.EvilBot)
-                evilBotEvaulation = controller.PlayerWhite.Bot.GetEvaulation();
+                evilBotEvaulation = controller.PlayerWhite.Bot.GetEvaluation();
             else if (controller.PlayerBlack.PlayerType == ChallengeController.PlayerType.EvilBot)
-                evilBotEvaulation = controller.PlayerBlack.Bot.GetEvaulation();
+                evilBotEvaulation = controller.PlayerBlack.Bot.GetEvaluation();
             else return;
 
             UIHelper.DrawText(

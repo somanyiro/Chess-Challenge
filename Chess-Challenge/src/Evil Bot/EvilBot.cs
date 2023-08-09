@@ -11,7 +11,7 @@ public class EvilBot : IChessBot
 	Random rng = new Random();
 	float evaulation = 0f;
 
-	public float GetEvaulation()
+	public float GetEvaluation()
 	{
 		return evaulation;
 	}
