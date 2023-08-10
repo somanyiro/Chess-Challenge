@@ -64,7 +64,7 @@ public class MyBot : IChessBot
 
 		float result = 0;
 
-		foreach (Piece piece in board.GetAllPieceLists().SelectMany(x => x).ToList())
+		foreach (Piece piece in board.GetAllPieceLists().SelectMany(x => x))
 		{
 			float pieceValue = 0;
 			switch (piece.PieceType) 
@@ -119,29 +119,29 @@ public class MyBot : IChessBot
 		//this is accoring to Hans Berliner's system but I don't know if the 7th and 8th rank are correct
 		float[,] earlyGameValueTable = 
 		{
-			{0.90f, 0.95f, 1.05f, 1.10f, 1.10f, 1.05f, 0.95f, 0.90f},
-			{0.90f, 0.95f, 1.05f, 1.15f, 1.15f, 1.05f, 0.95f, 0.90f},
-			{0.90f, 0.95f, 1.10f, 1.20f, 1.20f, 1.10f, 0.95f, 0.90f},
-			{0.97f, 1.03f, 1.17f, 1.27f, 1.27f, 1.17f, 1.03f, 0.97f},
-			{1.06f, 1.12f, 1.25f, 1.40f, 1.40f, 1.25f, 1.12f, 1.06f},
-			{5.63f, 5.63f, 5.63f, 5.63f, 5.63f, 5.63f, 5.63f, 5.63f},
+			{0.90f, 0.95f, 1.05f, 1.10f},
+			{0.90f, 0.95f, 1.05f, 1.15f},
+			{0.90f, 0.95f, 1.10f, 1.20f},
+			{0.97f, 1.03f, 1.17f, 1.27f},
+			{1.06f, 1.12f, 1.25f, 1.40f},
+			{5.63f, 5.63f, 5.63f, 5.63f},
 		};
 
 		float[,] lateGameValueTable = 
 		{
-			{1.20f, 1.05f, 0.95f, 0.90f, 0.90f, 0.95f, 1.05f, 1.20f},
-			{1.20f, 1.05f, 0.95f, 0.90f, 0.90f, 0.95f, 1.05f, 1.20f},
-			{1.25f, 1.10f, 1.00f, 0.95f, 0.95f, 1.00f, 1.10f, 1.25f},
-			{1.33f, 1.17f, 1.07f, 1.00f, 1.00f, 1.07f, 1.17f, 1.33f},
-			{1.45f, 1.29f, 1.16f, 1.05f, 1.05f, 1.16f, 1.29f, 1.45f},
-			{5.63f, 5.63f, 5.63f, 5.63f, 5.63f, 5.63f, 5.63f, 5.63f},
+			{1.20f, 1.05f, 0.95f, 0.90f},
+			{1.20f, 1.05f, 0.95f, 0.90f},
+			{1.25f, 1.10f, 1.00f, 0.95f},
+			{1.33f, 1.17f, 1.07f, 1.00f},
+			{1.45f, 1.29f, 1.16f, 1.05f},
+			{5.63f, 5.63f, 5.63f, 5.63f},
 		};
 
 		int relativeRank = piece.IsWhite ? piece.Square.Rank-1 : (int)Map(piece.Square.Rank, 0, 7, 7, 0)-1;
 
 		float positionMultiplier = Lerp(
-			earlyGameValueTable[relativeRank, piece.Square.File],
-			lateGameValueTable[relativeRank, piece.Square.File],
+			earlyGameValueTable[relativeRank, Fold8(piece.Square.File)],
+			lateGameValueTable[relativeRank, Fold8(piece.Square.File)],
 			GamePhase(board)
 		);
 
@@ -150,7 +150,7 @@ public class MyBot : IChessBot
 
 	float KnightValue(Board board, Piece piece)
 	{
-		float positionMultiplier = piece.Square.File == 0 || piece.Square.File == 7 || piece.Square.Rank == 0 || piece.Square.Rank == 7 ? 0.7f : 1;
+		float positionMultiplier = Fold8(piece.Square.File) == 0 || Fold8(piece.Square.Rank) == 0 ? 0.7f : 1;
 		float gameStateMultiplier = Map(PositionOpen(board), 0, 1, 1.5f, 1);
 
 		return positionMultiplier * gameStateMultiplier;
@@ -177,12 +177,9 @@ public class MyBot : IChessBot
 	/// <summary>Returns 0-1 depending on the number of pieces left on the board</summary>
 	float GamePhase(Board board)
 	{
-		int numberOfPieces = 0;
-		foreach (var pieceList in board.GetAllPieceLists())
-		{
-			numberOfPieces += pieceList.Count;
-		}
-		return Map(numberOfPieces, 2, 32, 1, 0);
+		return Map(
+			board.GetAllPieceLists().SelectMany(x => x).Count(), 
+			2, 32, 1, 0);
 	}
 
 	float Map(float value, float old_min, float old_max, float new_min, float new_max)
@@ -193,5 +190,11 @@ public class MyBot : IChessBot
 	float Lerp(float a, float b, float f)
 	{
 		return a + f * (b - a);
+	}
+
+	/// <summary>Converts an int from 0-7 to 0-3-0</summary>
+	int Fold8(int x)
+	{
+		return (int)-Math.Abs(0.86f * x - 3) + 3; 
 	}
 }
