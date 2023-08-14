@@ -16,7 +16,14 @@ public class MyBot : IChessBot
 
 	public Move Think(Board board, Timer timer)
 	{
-		(Move, float) bestMove = GetBestMove(board, float.MinValue, float.MaxValue, 3);
+		int depth = 3;
+		if (GamePhase(board) > 0.3f) 
+			depth += 1;
+		if (timer.MillisecondsRemaining < 5000)
+			depth -= 1;
+		Console.WriteLine(depth);
+
+		(Move, float) bestMove = GetBestMove(board, float.MinValue, float.MaxValue, depth);
 		evaluation = bestMove.Item2;
 		return bestMove.Item1;
 	}
@@ -61,6 +68,7 @@ public class MyBot : IChessBot
 		if (board.IsInCheckmate()) return board.IsWhiteToMove ? float.MinValue : float.MaxValue;
 		if (board.IsInsufficientMaterial()) return 0;
 		if (board.GetLegalMoves().Length == 0) return 0;
+		if (board.IsRepeatedPosition()) return 0;// not sure if this is right because it's not counting the number of repetitions
 
 		float result = 0;
 
