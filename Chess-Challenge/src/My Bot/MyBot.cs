@@ -8,6 +8,7 @@ public class MyBot : IChessBot
 {
 	float evaluation = 0f;
 	Random rnd = new Random();
+	int timeLeftAtStart;
 
 	public float GetEvaluation()
 	{
@@ -16,14 +17,14 @@ public class MyBot : IChessBot
 
 	public Move Think(Board board, Timer timer)
 	{
+		timeLeftAtStart = timer.MillisecondsRemaining;
+
 		int depth = 3;
-		if (GamePhase(board) > 0.3f) 
+		if (GamePhase(board) > 0.05f && timeLeftAtStart > 20000) 
 			depth += 1;
-		if (timer.MillisecondsRemaining < 5000)
-			depth -= 1;
 		Console.WriteLine(depth);
 
-		(Move, float) bestMove = GetBestMove(board, float.MinValue, float.MaxValue, depth);
+		(Move, float) bestMove = GetBestMove(board, float.MinValue, float.MaxValue, depth, timer);
 		evaluation = bestMove.Item2;
 		return bestMove.Item1;
 	}
@@ -31,7 +32,7 @@ public class MyBot : IChessBot
 	///<summary>
 	///Uses a Min Max algorithm with alpha beta pruning to calculate the best move at a given depth
 	///</summary>
-	(Move, float) GetBestMove(Board board, float alpha, float beta, int depth)
+	(Move, float) GetBestMove(Board board, float alpha, float beta, int depth, Timer timer)
 	{
 		List<Move> allMoves = board.GetLegalMoves().ToList();
 		allMoves = allMoves.OrderBy(x => rnd.Next()).ToList();
@@ -47,7 +48,7 @@ public class MyBot : IChessBot
 				score = Evaulate(board);
 			else
 			{
-				score = GetBestMove(board, alpha, beta, depth-1).Item2;
+				score = GetBestMove(board, alpha, beta, depth-1, timer).Item2;
 			}
 			board.UndoMove(move);
 			if ((board.IsWhiteToMove && score > bestScore) || (!board.IsWhiteToMove && score < bestScore))
@@ -58,6 +59,13 @@ public class MyBot : IChessBot
 			if (board.IsWhiteToMove && score > alpha) alpha = score;
 			if (!board.IsWhiteToMove && score < beta) beta = score;
 			if (beta < alpha) break;
+
+			//break out of the loop and return the current best move if half the available time has passed
+			if (timer.MillisecondsElapsedThisTurn > timeLeftAtStart/3f)
+			{
+				Console.WriteLine("stopped searching because of time");
+				break;
+			}
 		}
 
 		return (bestMove, bestScore);
