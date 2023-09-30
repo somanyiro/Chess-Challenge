@@ -2,13 +2,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 
 public class MyBot : IChessBot
 {
 	float evaluation = 0f;
 	Random rnd = new Random();
 	int timeLeftAtStart;
+
+	int[] pieceValuesByType = {0, 10, 30, 30, 50, 90, 1000};
 
 	public float GetEvaluation()
 	{
@@ -20,7 +21,11 @@ public class MyBot : IChessBot
 		timeLeftAtStart = timer.MillisecondsRemaining;
 
 		int depth = 3;
+		
 		if (GamePhase(board) > 0.05f && timeLeftAtStart > 20000) 
+			depth += 1;
+			
+		if (board.IsRepeatedPosition())
 			depth += 1;
 		Console.WriteLine(depth);
 
@@ -63,7 +68,7 @@ public class MyBot : IChessBot
 			//break out of the loop and return the current best move if half the available time has passed
 			if (timer.MillisecondsElapsedThisTurn > timeLeftAtStart/3f)
 			{
-				Console.WriteLine("stopped searching because of time");
+				//Console.WriteLine("stopped searching because of time");
 				break;
 			}
 		}
@@ -82,36 +87,7 @@ public class MyBot : IChessBot
 
 		foreach (Piece piece in board.GetAllPieceLists().SelectMany(x => x))
 		{
-			float pieceValue = 0;
-			switch (piece.PieceType) 
-			{
-				case PieceType.Pawn:
-					pieceValue = 10.0f * PawnValue(board, piece);
-					break;
-
-				case PieceType.Knight:
-					pieceValue = 30.5f * KnightValue(board, piece);
-					break;
-
-				case PieceType.Bishop:
-					pieceValue = 33.3f * SliderValueMultiplier(board, piece);
-					break;
-
-				case PieceType.Rook:
-					pieceValue = 56.3f * SliderValueMultiplier(board, piece);
-					break;
-
-				case PieceType.Queen:
-					pieceValue = 95.0f * SliderValueMultiplier(board, piece);
-					break;
-
-				case PieceType.King:
-					pieceValue = KingValue(board, piece);
-					break;
-				
-				default:
-					break;
-			}
+			float pieceValue = CalculatePieceValue(board, piece);
 			if (piece.IsWhite) result += pieceValue;
 			else result -= pieceValue;
 		}
@@ -128,66 +104,6 @@ public class MyBot : IChessBot
 		board.UndoMove(move);
 
 		return score + (int)board.GetPiece(move.TargetSquare).PieceType;
-	}
-
-	float PawnValue(Board board, Piece piece)
-	{
-		//this is accoring to Hans Berliner's system but I don't know if the 7th and 8th rank are correct
-		float[,] earlyGameValueTable = 
-		{
-			{0.90f, 0.95f, 1.05f, 1.10f},
-			{0.90f, 0.95f, 1.05f, 1.15f},
-			{0.90f, 0.95f, 1.10f, 1.20f},
-			{0.97f, 1.03f, 1.17f, 1.27f},
-			{1.06f, 1.12f, 1.25f, 1.40f},
-			{5.63f, 5.63f, 5.63f, 5.63f},
-		};
-
-		float[,] lateGameValueTable = 
-		{
-			{1.20f, 1.05f, 0.95f, 0.90f},
-			{1.20f, 1.05f, 0.95f, 0.90f},
-			{1.25f, 1.10f, 1.00f, 0.95f},
-			{1.33f, 1.17f, 1.07f, 1.00f},
-			{1.45f, 1.29f, 1.16f, 1.05f},
-			{5.63f, 5.63f, 5.63f, 5.63f},
-		};
-
-		int relativeRank = piece.IsWhite ? piece.Square.Rank-1 : (int)Map(piece.Square.Rank, 0, 7, 7, 0)-1;
-
-		float positionMultiplier = Lerp(
-			earlyGameValueTable[relativeRank, Fold8(piece.Square.File)],
-			lateGameValueTable[relativeRank, Fold8(piece.Square.File)],
-			GamePhase(board)
-		);
-
-		return positionMultiplier;
-	}
-
-	float KnightValue(Board board, Piece piece)
-	{
-		float positionMultiplier = Fold8(piece.Square.File) == 0 || Fold8(piece.Square.Rank) == 0 ? 0.7f : 1;
-		float gameStateMultiplier = Map(PositionOpen(board), 0, 1, 1.5f, 1);
-
-		return positionMultiplier * gameStateMultiplier;
-	}
-
-	float SliderValueMultiplier(Board board, Piece piece)
-	{
-		return Map(PositionOpen(board), 0, 1, 0.8f, 1.1f);
-	}
-
-	float KingValue(Board board, Piece piece)
-	{
-		return 100000;
-	}
-
-	/// <summary>Returns 0-1 depending on how open the position is which is determinaed by pawn structure</summary>
-	float PositionOpen(Board board)
-	{
-		return Map(
-			board.GetPieceList(PieceType.Pawn, true).Count() + board.GetPieceList(PieceType.Pawn, false).Count(),
-			0, 16, 0, 1);
 	}
 
 	/// <summary>Returns 0-1 depending on the number of pieces left on the board</summary>
@@ -212,5 +128,40 @@ public class MyBot : IChessBot
 	int Fold8(int x)
 	{
 		return (int)-Math.Abs(0.86f * x - 3) + 3; 
+	}
+
+	float CalculatePieceValue(Board board, Piece piece)
+	{
+		int typeValue = pieceValuesByType[(int)piece.PieceType];
+
+		ulong attackedSquares = BitboardHelper.GetPieceAttacks(piece.PieceType, piece.Square, board, piece.IsWhite);
+
+		int attackedSquaresValue = 0;
+
+		for (int file = 0; file < 8; file++)
+		{
+			for (int rank = 0; rank < 8; rank++)
+			{
+				Square currentSquare = new Square(rank, file);
+
+				if (BitboardHelper.SquareIsSet(attackedSquares, currentSquare))
+					attackedSquaresValue += SquareValue(board, currentSquare);
+			}
+		}
+
+		return typeValue + attackedSquaresValue; // TODO: I also need to add Swap-off Value
+	}
+
+	int SquareValue(Board board, Square square)
+	{
+		Square enemyKingPosition = board.GetKingSquare(!board.IsWhiteToMove);
+
+		if (Math.Abs(square.File - enemyKingPosition.File) <= 1 && Math.Abs(square.Rank - enemyKingPosition.Rank) <= 1)
+			return 3;
+		
+		if (Fold8(square.File) == 3 && Fold8(square.Rank) == 3)
+			return 2;
+
+		return 1;
 	}
 }
